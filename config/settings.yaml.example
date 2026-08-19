@@ -1,0 +1,27 @@
+# Telegram 通知設定（Bot Token 與 Owner Chat ID）
+telegram:
+  bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+  chat_id: "YOUR_TELEGRAM_CHAT_ID"
+
+# 放貸策略設定
+funding:
+  # 利率閾值（年化%，小數形式）
+  high_rate_threshold: 0.145   # > 14.5% → 120天
+  mid_rate_threshold: 0.12    # > 12%   → 7天
+  default_period_days: 2      # ≤ 12%   → 2天
+
+  # FRR 策略
+  frr_adjust_enabled: true    # 是否啟用 FRR 自動調整
+  trade_rate_threshold: 0.001 # 市場成交利率 threshold
+
+  # 階梯掛單
+  ladder_enabled: true
+  ladder_tiers: 5             # 階梯層數
+
+# 結算通知間隔（分鐘）
+settle_interval: 15
+
+# 日誌設定
+logging:
+  level: "INFO"
+  file: "logs/funding.log"
