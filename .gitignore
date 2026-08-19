@@ -1,0 +1,28 @@
+# 敏感資料（嚴禁 commit）
+config/settings.yaml
+data/users.json
+data/ledger.json
+data/*.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Logs
+logs/*.log
+logs/*.txt
+*.log
+
+# 臨時檔案
+*.tmp
+*.bak
+*.bak_*
+
+# Go
+funding-bot
+
+# System
+.DS_Storevenv/
