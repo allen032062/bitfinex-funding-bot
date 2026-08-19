@@ -1,7 +1,7 @@
-# Telegram 通知設定（Bot Token 與 Owner Chat ID）
+# Telegram Bot Token（從 @BotFather 取得）
 telegram:
   bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
-  chat_id: "YOUR_TELEGRAM_CHAT_ID"
+  # chat_id: 每個用戶用自己的 Telegram ID，無需在此設定
 
 # 放貸策略設定
 funding:
