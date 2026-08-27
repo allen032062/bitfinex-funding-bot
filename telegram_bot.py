@@ -550,7 +550,7 @@ def get_twd_rate():
 # Funding 狀態訊息渲染（統一的訊息產生中心）
 # =============================================================================
 
-def render_funding_status(avail_usd, total_usd=None, frr="N/A", include_full_dashboard=False, user=None):
+def render_funding_status(avail_usd, total_usd=None, frr="N/A", include_full_dashboard=False, user=None, unfilled_usd=None):
     """
     統一的 Funding 狀態訊息渲染中心
 
@@ -562,6 +562,7 @@ def render_funding_status(avail_usd, total_usd=None, frr="N/A", include_full_das
         frr: 市場利率（FRR），可為數字或 "N/A"
         include_full_dashboard: True=完整 Dashboard（/menu 用），False=精簡餘額卡（置頂訊息用）
         user: 用戶資料字典（可選，用於讀取 auto_place, min_amount）
+        unfilled_usd: 未借出金額（USD），完整 Dashboard 時顯示
 
     回傳：
         HTML 格式的 Telegram 訊息文字
@@ -569,6 +570,7 @@ def render_funding_status(avail_usd, total_usd=None, frr="N/A", include_full_das
     twd_rate = get_twd_rate()
     avail_twd = f"{float(avail_usd) * twd_rate:.0f}" if twd_rate and isinstance(avail_usd, (int, float)) else "?"
     total_twd = f"{float(total_usd or avail_usd) * twd_rate:.0f}" if twd_rate and isinstance(total_usd or avail_usd, (int, float)) else "?"
+    unfilled_twd = f"{float(unfilled_usd) * twd_rate:.0f}" if twd_rate and isinstance(unfilled_usd, (int, float)) else "?"
     frr_str = f"{float(frr):.4f}%/年" if isinstance(frr, (int, float)) else str(frr)
 
     if include_full_dashboard:
@@ -576,10 +578,11 @@ def render_funding_status(avail_usd, total_usd=None, frr="N/A", include_full_das
         auto = user.get("auto_place", False) if user else False
         min_amt = user.get("min_amount", 150) if user else 150
         auto_status = "✅ 已開啟" if auto else "❌ 已關閉"
+        unfilled_line = f"\n💰 未借出: <b>{unfilled_usd}</b> USD (約 NT$ {unfilled_twd})" if unfilled_usd is not None else ""
         return f"""💰 <b>融資帳戶</b>
 
 📊 總餘額: <b>{total_usd or avail_usd}</b> USD (約 NT$ {total_twd})
-💵 可用餘額: <b>{avail_usd}</b> USD (約 NT$ {avail_twd})
+💵 可用餘額: <b>{avail_usd}</b> USD (約 NT$ {avail_twd}){unfilled_line}
 
 📈 市場利率(FRR): <b>{frr_str}</b>
 
@@ -1041,10 +1044,13 @@ def cmd_funding(chat_id):
             offers = exchange.private_post_auth_r_funding_offers({'symbol': 'fUSD'})
             bal = exchange.fetch_balance({"type": "funding"})
 
-        # 計算總額
+        # 計算總額（使用錢包真實總額，而非 credits+offers 的組合）
         total_lent = sum(float(c[5]) for c in credits if c[5])
         total_offer = sum(float(o[5]) for o in offers if o[5])
-        total_funding = total_lent + total_offer
+        wallet_info = bal.get('total', {}) if isinstance(bal, dict) else {}
+        total_funding = float(wallet_info.get('USD', 0)) if wallet_info else (total_lent + total_offer)
+        # 未借出 = 錢包總額 - 已借出 - 等待成交（錢包裡還沒掛出去的現貨）
+        unfilled = max(0.0, total_funding - total_lent - total_offer)
 
         # 利率轉換（顯示給用戶時乘 100）
         frr_daily_pct = (frr_daily * 100) if frr_daily else 0
@@ -1056,7 +1062,8 @@ def cmd_funding(chat_id):
             "💰 <b>帳戶</b>\n"
             f"  總額: ${total_funding:.6f} USD\n"
             f"  出借中: ${total_lent:.6f} USD\n"
-            f"  等待成交: ${total_offer:.6f} USD\n\n"
+            f"  等待成交: ${total_offer:.6f} USD\n"
+            f"  未借出: ${unfilled:.6f} USD\n\n"
             "📈 <b>市場利率</b>\n"
             f"  日利率: {frr_daily_pct:.4f}%/天\n"
             f"  年化 (APR): {frr_annual_pct:.2f}%\n\n"
