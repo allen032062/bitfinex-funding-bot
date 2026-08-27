@@ -449,12 +449,6 @@ def _get_balance(chat_id):
     return balance_cache.get(str(chat_id))
 
 
-def update_user_balance_cache(chat_id, total, avail, frr=None):
-    """
-    更新用戶餘額快取（在錢包更新事件時呼叫）
-    """
-    _set_balance(chat_id, total, avail, frr)
-
 
 def _cache_get(chat_id):
     """取得快取的 Dashboard 文字"""
@@ -485,20 +479,6 @@ def _cache_dirty_check(chat_id, new_text):
         return False
     _cache_set(chat_id, new_text)
     return True
-
-
-def _get_offer_msg(chat_id, offer_id):
-    """
-    取得某個 offer 追蹤的 Telegram message_id
-
-    參數：
-        chat_id: 聊天 ID
-        offer_id: 掛單 ID
-
-    回傳：
-        message_id 或 None
-    """
-    return offer_msg_map.get(str(chat_id), {}).get(offer_id)
 
 
 def _set_offer_msg(chat_id, offer_id, msg_id):
@@ -656,31 +636,6 @@ def has_valid_api_key(user):
     api_key = user.get("api_key", "")
     api_secret = user.get("api_secret", "")
     return len(api_key) >= 10 and len(api_secret) >= 10
-
-
-def build_dashboard(user=None, balance_info=None):
-    """
-    建立主 Dashboard 訊息文字
-
-    參數：
-        user: 用戶資料字典
-        balance_info: 餘額資訊（可選），格式：{"total": "...", "avail": "...", "frr": "..."}
-
-    回傳：
-        Dashboard HTML 訊息文字
-    """
-    if not user:
-        return "❌ 尚未註冊，請使用 /start 設定 API Key"
-
-    if balance_info:
-        total = balance_info.get("total", "0")
-        avail = balance_info.get("avail", "0")
-        frr = balance_info.get("frr", "N/A")
-    else:
-        total = avail = "載入中..."
-        frr = "載入中..."
-
-    return render_funding_status(avail, total, frr, include_full_dashboard=True, user=user)
 
 
 # =============================================================================
